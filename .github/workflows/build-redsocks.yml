@@ -1,0 +1,47 @@
+name: Build Redsocks2 for Android
+
+on:
+  workflow_dispatch:   # 允许手动触发
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git gcc make automake autoconf libtool libevent-dev
+
+    - name: Clone redsocks2 source
+      run: |
+        git clone https://github.com/semigodking/redsocks.git
+        cd redsocks
+
+    - name: Build for host (test)
+      run: |
+        cd redsocks
+        ./autogen.sh
+        ./configure
+        make
+        # 测试运行，查看版本
+        ./src/redsocks2 -v || true
+
+    - name: Prepare artifacts
+      run: |
+        # 假设我们编译出的二进制在redsocks/src/redsocks2
+        cd redsocks
+        mkdir -p ../artifacts
+        # 重命名并复制
+        cp src/redsocks2 ../artifacts/redsocks2-$(uname -m)
+        # 显示文件信息
+        file ../artifacts/*
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: redsocks2-binaries
+        path: artifacts/
